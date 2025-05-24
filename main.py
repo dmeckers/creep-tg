@@ -1,4 +1,3 @@
-import asyncio
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 import uvicorn
@@ -11,15 +10,18 @@ from telegram.ext import (
     filters,
     Application,
 )
+import os
 
-API_TOKEN = "7504051741:AAEjNmzUp7_g53OsWmb8YwED4ijBKH0IzIU"
+# TODO::Separate all stuff
+BOT_TOKEN = os.environ.get("BOT_TOKEN")
+WEB_APP_URL = os.environ.get("WEB_APP_URL")
 
-web_app_url = "https://creamradio.netlify.app/"
+web_app_url = "https://2e27-89-254-133-189.ngrok-free.app/stations/aliquid/stream"
 
 app = FastAPI()
-bot = Bot(token=API_TOKEN)
+bot = Bot(token=BOT_TOKEN)
 
-telegram_app: Application = ApplicationBuilder().token(API_TOKEN).build()
+telegram_app: Application = ApplicationBuilder().token(BOT_TOKEN).build()
 
 # ====== TG Handlers ======
 
@@ -27,10 +29,7 @@ telegram_app: Application = ApplicationBuilder().token(API_TOKEN).build()
 async def defaultGreetings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("Open Web App", web_app=WebAppInfo(web_app_url))]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    # await update.message.reply_text(
-    #     "Welcome to Cream Radio! Hit the button below to open the radio.",
-    #     reply_markup=reply_markup,
-    # )
+
     user_chat = update.message.chat
     await update.message.reply_text(
         f"Welcome to Cream Radio {update.message.from_user.id} ! Hit the button below to open the radio. Chat ID: {user_chat.id}, Chat Type: {user_chat.type}, User ID: {user_chat.username or user_chat.id}",
@@ -42,9 +41,15 @@ async def text_message_handler(update: Update, context: ContextTypes.DEFAULT_TYP
     await defaultGreetings(update, context)
 
 
+async def start_command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await defaultGreetings(update, context)
+
+
 telegram_app.add_handler(
     MessageHandler(filters.TEXT & ~filters.COMMAND, text_message_handler)
 )
+
+telegram_app.add_handler(MessageHandler(filters.COMMAND, start_command_handler))
 
 # ====== Lifespan Events ======
 
@@ -85,7 +90,3 @@ async def send_message(request: Request):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=3000)
-
-# use Illuminate\Support\Facades\Http;
-# $response = Http::post('http://tg:3000/send-message' , ['chat_id' => 12345 , 'text' => 'Test!']);
-# https://chatgpt.com/c/681b983c-02d8-8003-b9ef-8428658cfd41
