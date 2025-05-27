@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request
 from contextlib import asynccontextmanager
 import uvicorn
+import aiohttp
+import io
 
 from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
 from telegram.ext import (
@@ -15,6 +17,7 @@ import os
 # TODO::Separate all stuff
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 WEB_APP_URL = os.environ.get("WEB_APP_URL")
+API_URL = os.environ.get("API_URL")
 
 web_app_url = "https://2e27-89-254-133-189.ngrok-free.app/stations/aliquid/stream"
 
@@ -45,11 +48,55 @@ async def start_command_handler(update: Update, context: ContextTypes.DEFAULT_TY
     await defaultGreetings(update, context)
 
 
+async def audio_message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    audio = update.message.audio
+
+    if not audio:
+        await update.message.reply_text("Please send an audio file.")
+        return
+
+    file_id = audio.file_id
+    file = await context.bot.get_file(file_id)
+    file_url = file.file_path
+
+    print(f"Received audio file: {file_id}, URL: {file_url}")
+
+    # post to api
+    response = await send_audio_to_api(file_url, file_id)
+
+    if response.get("code") == 200 or response.get("code") == 201:
+        await update.message.reply_text(
+            f"Audio file {file_id} successfully sent to the API."
+        )
+    else:
+        await update.message.reply_text(
+            f"Failed to send audio file {file_id} to the API. Error: {response.get('error', 'Unknown error')}"
+        )
+
+
+async def send_audio_to_api(file_url: str, file_id: str):
+    """Send the audio file to your internal API"""
+    # Define your API endpoint - use service name as hostname
+
+    upload_audio_url = f"{API_URL}/api/v1/songs"
+
+    async with aiohttp.ClientSession() as session:
+            async with session.post(
+                upload_audio_url, data={
+                    "file_url": file_url,
+                    "file_id": file_id,
+                }
+            ) as api_response:
+                return await api_response.json()
+
+
 telegram_app.add_handler(
     MessageHandler(filters.TEXT & ~filters.COMMAND, text_message_handler)
 )
 
 telegram_app.add_handler(MessageHandler(filters.COMMAND, start_command_handler))
+telegram_app.add_handler(MessageHandler(filters.AUDIO, audio_message_handler))
+
 
 # ====== Lifespan Events ======
 
