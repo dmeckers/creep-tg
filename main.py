@@ -19,8 +19,6 @@ BOT_TOKEN = os.environ.get("BOT_TOKEN")
 WEB_APP_URL = os.environ.get("WEB_APP_URL")
 API_URL = os.environ.get("API_URL")
 
-web_app_url = "https://2e27-89-254-133-189.ngrok-free.app/stations/aliquid/stream"
-
 app = FastAPI()
 bot = Bot(token=BOT_TOKEN)
 
@@ -30,7 +28,7 @@ telegram_app: Application = ApplicationBuilder().token(BOT_TOKEN).build()
 
 
 async def defaultGreetings(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton("Open Web App", web_app=WebAppInfo(web_app_url))]]
+    keyboard = [[InlineKeyboardButton("Open Web App", web_app=WebAppInfo(WEB_APP_URL))]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     user_chat = update.message.chat
