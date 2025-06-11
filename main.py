@@ -30,7 +30,6 @@ telegram_app: Application = ApplicationBuilder().token(BOT_TOKEN).build()
 async def defaultGreetings(update: Update, context: ContextTypes.DEFAULT_TYPE):
     keyboard = [[InlineKeyboardButton("Open Web App", web_app=WebAppInfo(WEB_APP_URL))]]
     reply_markup = InlineKeyboardMarkup(keyboard)
-
     user_chat = update.message.chat
     await update.message.reply_text(
         f"Welcome to Cream Radio {update.message.from_user.id} ! Hit the button below to open the radio. Chat ID: {user_chat.id}, Chat Type: {user_chat.type}, User ID: {user_chat.username or user_chat.id}",
@@ -56,36 +55,59 @@ async def audio_message_handler(update: Update, context: ContextTypes.DEFAULT_TY
     file_id = audio.file_id
     file = await context.bot.get_file(file_id)
     file_url = file.file_path
+    filename = audio.file_name if audio.file_name else f"{file_id}.mp3"
 
-    print(f"Received audio file: {file_id}, URL: {file_url}")
+    telegram_user = update.message.from_user
 
     # post to api
-    response = await send_audio_to_api(file_url, file_id)
+    response = await send_audio_to_api(file_url, file_id, telegram_user, filename)
+
+    if (
+        response.get("message")
+        == "Song with this code already exists or file already exists in storage."
+    ):
+        await update.message.reply_text("Song is already added.")
+        return
 
     if response.get("code") == 200 or response.get("code") == 201:
-        await update.message.reply_text(
-            f"Audio file {file_id} successfully sent to the API."
-        )
+        await update.message.reply_text("Song is saved.")
+    elif response.get("code") == 400 or response.get("code") == 500:
+        await update.message.reply_text("Failed to save song.")
     else:
-        await update.message.reply_text(
-            f"Failed to send audio file {file_id} to the API. Error: {response.get('error', 'Unknown error')}"
-        )
+        await update.message.reply_text("Failed to save song.")
 
 
-async def send_audio_to_api(file_url: str, file_id: str):
+async def send_audio_to_api(file_url: str, file_id: str, telegram_user, filename: str):
     """Send the audio file to your internal API"""
-    # Define your API endpoint - use service name as hostname
+    # upload_audio_url = "http://api/api/upload-from-bot"
+    upload_audio_url = f"{API_URL}/api/upload-from-bot"
 
-    upload_audio_url = f"{API_URL}/api/v1/songs"
-
-    async with aiohttp.ClientSession() as session:
+    try:
+        async with aiohttp.ClientSession() as session:
             async with session.post(
-                upload_audio_url, data={
+                upload_audio_url,
+                data={
                     "file_url": file_url,
                     "file_id": file_id,
-                }
+                    "telegram_user_id": telegram_user.id,
+                    "telegram_user_first_name": telegram_user.first_name,
+                    "telegram_user_username": telegram_user.username,
+                    "filename": filename,
+                },
+                headers={"Accept": "application/json"},
             ) as api_response:
-                return await api_response.json()
+                if api_response.content_type == "application/json":
+                    return await api_response.json()
+                else:
+                    # Handle non-JSON responses
+                    text = await api_response.text()
+                    return {
+                        "code": api_response.status,
+                        "error": f"Unexpected response: {text[:100]}...",
+                        "content_type": api_response.content_type,
+                    }
+    except Exception as e:
+        return {"code": 500, "error": f"Request failed: {str(e)}"}
 
 
 telegram_app.add_handler(
