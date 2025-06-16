@@ -93,7 +93,11 @@ async def handler(event):
 
         if response.get("data"):
             await event.reply("Song uploaded successfully.")
-        elif response.get("exception") == "App\\Exceptions\\SongAlreadyAddedException":
+        elif (
+            response.get("exception") == "App\\Exceptions\\SongAlreadyAddedException"
+            or response.get("message")
+            == "Song with this code already exists or file already exists in storage."
+        ):
             await event.reply(
                 "Song has already been added. You can find it in the library."
             )
