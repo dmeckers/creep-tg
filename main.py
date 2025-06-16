@@ -75,8 +75,7 @@ async def handler(event):
 
         file_size_mb = audio.size / 1024 / 1024
 
-        if file_size_mb > 30:
-            await event.reply(
+        await event.reply(
                 f"⚠️ File size is {file_size_mb:.2f}MB — upload may take a while..."
             )
 
