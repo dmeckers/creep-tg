@@ -1,6 +1,6 @@
 import asyncio
 import os
-from telethon import TelegramClient, events, Button
+from telethon import TelegramClient, events, Button, functions
 import aiohttp
 from telethon.sessions import StringSession
 from telethon.tl.types import DocumentAttributeFilename
@@ -46,9 +46,23 @@ async def send_audio_to_api(file_path: str, file_id: str, user, filename: str):
 
 @client.on(events.NewMessage(pattern="/start"))
 async def start(event):
-    keyboard = [[Button.url("Open Mini App", url=WEB_APP_URL)]]
+    try:
+        result = await client(
+            functions.messages.RequestWebViewRequest(
+                peer=event.chat_id,
+                bot=BOT_TOKEN.split(":")[0],  # Your bot's username
+                platform="android",
+                from_bot_menu=True,
+                compact=False,
+                fullscreen=True,
+                url=MINI_APP_URL,
+                start_param="",  # Optional start parameter
+            )
+        )
 
-    await event.reply("Click the button below to open our Mini App:", buttons=keyboard)
+        await event.reply(f"Web view opened: {result.url}")
+    except Exception as e:
+        await event.reply(f"Error opening web view: {str(e)}")
 
 
 @client.on(events.NewMessage)
@@ -85,11 +99,23 @@ async def handler(event):
         else:
             await event.reply("Failed to save song.")
     else:
-        keyboard = [[Button.url("Open Mini App", url=WEB_APP_URL)]]
+        try:
+            result = await client(
+                functions.messages.RequestWebViewRequest(
+                    peer=event.chat_id,
+                    bot=BOT_TOKEN.split(":")[0],  # Your bot's username
+                    platform="android",
+                    from_bot_menu=True,
+                    compact=False,
+                    fullscreen=True,
+                    url=MINI_APP_URL,
+                    start_param="",  # Optional start parameter
+                )
+            )
 
-        await event.reply(
-            "Click the button below to open our Mini App:", buttons=keyboard
-        )
+            await event.reply(f"Web view opened: {result.url}")
+        except Exception as e:
+            await event.reply(f"Error opening web view: {str(e)}")
 
 
 def get_audio_filename(audio):
