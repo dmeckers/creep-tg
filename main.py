@@ -1,9 +1,10 @@
 import asyncio
 import os
-from telethon import TelegramClient, events, Button, functions
+from telethon import TelegramClient, events, Button
 import aiohttp
 from telethon.sessions import StringSession
 from telethon.tl.types import DocumentAttributeFilename
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update, WebAppInfo
 
 API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
@@ -14,6 +15,8 @@ WEB_APP_URL = os.environ.get("WEB_APP_URL", "https://mini-app.example.com")
 print(f"Using API URL: {API_UPLOAD_URL}")
 
 client = TelegramClient(StringSession(), API_ID, API_HASH).start(bot_token=BOT_TOKEN)
+
+bot = Bot(token=BOT_TOKEN)
 
 
 async def send_audio_to_api(file_path: str, file_id: str, user, filename: str):
@@ -46,25 +49,14 @@ async def send_audio_to_api(file_path: str, file_id: str, user, filename: str):
 
 @client.on(events.NewMessage(pattern="/start"))
 async def start(event):
-    try:
-        me = await client.get_me()
+    keyboard = [[InlineKeyboardButton("Open Web App", web_app=WebAppInfo(WEB_APP_URL))]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
 
-        result = await client(
-            functions.messages.RequestWebViewRequest(
-                peer=event.chat_id,
-                bot=me.id,
-                platform="android",
-                from_bot_menu=True,
-                compact=False,
-                fullscreen=True,
-                url=WEB_APP_URL,
-                start_param="",
-            )
-        )
-
-        await event.reply(f"Web view opened: {result.url}")
-    except Exception as e:
-        await event.reply(f"Error opening web view: {str(e)}")
+    await bot.send_message(
+        event.chat_id,
+        f"Welcome to Creep Radio! Hit the button below to open the radio.",
+        reply_markup=reply_markup,
+    )
 
 
 @client.on(events.NewMessage)
@@ -101,25 +93,17 @@ async def handler(event):
         else:
             await event.reply("Failed to save song.")
     else:
-        try:
-            me = await client.get_me()
+        #   keyboard = [[Button.url("Open Mini App", url=WEB_APP_URL)]]
+        keyboard = [
+            [InlineKeyboardButton("Open Web App", web_app=WebAppInfo(WEB_APP_URL))]
+        ]
+        reply_markup = InlineKeyboardMarkup(keyboard)
 
-            result = await client(
-                functions.messages.RequestWebViewRequest(
-                    peer=event.chat_id,
-                    bot=me.id,
-                    platform="android",
-                    from_bot_menu=True,
-                    compact=False,
-                    fullscreen=True,
-                    url=WEB_APP_URL,
-                    start_param="",
-                )
-            )
-
-            await event.reply(f"Web view opened: {result.url}")
-        except Exception as e:
-            await event.reply(f"Error opening web view: {str(e)}")
+        await bot.send_message(
+            event.chat_id,
+            f"Welcome to Creep Radio! Hit the button below to open the radio.",
+            reply_markup=reply_markup,
+        )
 
 
 def get_audio_filename(audio):
