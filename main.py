@@ -55,7 +55,7 @@ async def start(event):
                 from_bot_menu=True,
                 compact=False,
                 fullscreen=True,
-                url=MINI_APP_URL,
+                url=WEB_APP_URL,
                 start_param="",  # Optional start parameter
             )
         )
