@@ -49,6 +49,9 @@ async def send_audio_to_api(file_path: str, file_id: str, user, filename: str):
 
 @client.on(events.NewMessage(pattern="/start"))
 async def start(event):
+    if event.out:
+        return
+
     keyboard = [[InlineKeyboardButton("Open Web App", web_app=WebAppInfo(WEB_APP_URL))]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -61,6 +64,10 @@ async def start(event):
 
 @client.on(events.NewMessage)
 async def handler(event):
+
+    if event.out:
+        return
+
     if event.message.audio:
         audio = event.message.audio
         filename = get_audio_filename(audio)
