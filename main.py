@@ -47,16 +47,18 @@ async def send_audio_to_api(file_path: str, file_id: str, user, filename: str):
 @client.on(events.NewMessage(pattern="/start"))
 async def start(event):
     try:
+        me = await client.get_me()
+
         result = await client(
             functions.messages.RequestWebViewRequest(
                 peer=event.chat_id,
-                bot=BOT_TOKEN.split(":")[0],  # Your bot's username
+                bot=me.id,
                 platform="android",
                 from_bot_menu=True,
                 compact=False,
                 fullscreen=True,
                 url=WEB_APP_URL,
-                start_param="",  # Optional start parameter
+                start_param="",
             )
         )
 
@@ -100,16 +102,18 @@ async def handler(event):
             await event.reply("Failed to save song.")
     else:
         try:
+            me = await client.get_me()
+
             result = await client(
                 functions.messages.RequestWebViewRequest(
                     peer=event.chat_id,
-                    bot=BOT_TOKEN.split(":")[0],  # Your bot's username
+                    bot=me.id,
                     platform="android",
                     from_bot_menu=True,
                     compact=False,
                     fullscreen=True,
-                    url=MINI_APP_URL,
-                    start_param="",  # Optional start parameter
+                    url=WEB_APP_URL,
+                    start_param="",
                 )
             )
 
