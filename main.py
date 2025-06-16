@@ -1,6 +1,6 @@
 import asyncio
 import os
-from telethon import TelegramClient, events
+from telethon import TelegramClient, events, Button
 import aiohttp
 from telethon.sessions import StringSession
 from telethon.tl.types import DocumentAttributeFilename
@@ -9,6 +9,7 @@ API_ID = int(os.environ.get("API_ID"))
 API_HASH = os.environ.get("API_HASH")
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 API_UPLOAD_URL = f"{os.environ.get('API_URL', 'http://api')}/api/upload-from-bot"
+WEB_APP_URL = os.environ.get("WEB_APP_URL", "https://mini-app.example.com")
 
 print(f"Using API URL: {API_UPLOAD_URL}")
 
@@ -45,7 +46,9 @@ async def send_audio_to_api(file_path: str, file_id: str, user, filename: str):
 
 @client.on(events.NewMessage(pattern="/start"))
 async def start(event):
-    await event.reply("Welcome to Cream Radio! Send me an audio file.")
+    keyboard = [[Button.url("Open Mini App", url=WEB_APP_URL)]]
+
+    await event.reply("Click the button below to open our Mini App:", buttons=keyboard)
 
 
 @client.on(events.NewMessage)
@@ -82,7 +85,11 @@ async def handler(event):
         else:
             await event.reply("Failed to save song.")
     else:
-        await event.reply("Please send an audio file.")
+        keyboard = [[Button.url("Open Mini App", url=WEB_APP_URL)]]
+
+        await event.reply(
+            "Click the button below to open our Mini App:", buttons=keyboard
+        )
 
 
 def get_audio_filename(audio):
